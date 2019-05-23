@@ -5,3 +5,4 @@ authors = ["Roberto Casadei <robyonrails@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+another-cargo-project = { path = "../another-cargo-project/"} # local dependency to another package

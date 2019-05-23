@@ -4,10 +4,3 @@
 name = "another-cargo-project"
 version = "0.1.0"
 
-[[package]]
-name = "my-cargo-project"
-version = "0.1.0"
-dependencies = [
- "another-cargo-project 0.1.0",
-]
-

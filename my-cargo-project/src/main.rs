@@ -24,7 +24,86 @@ fn main() {
     // let i: i32 = {  10; }; // ERROR: expected i32, found ()
     let i: i32 = { fn f(){}; 20; ; 10 }; // OK (local fun; 20 is dropped; empty statement; return 10)
 
+    //// Scalar types
+    let i: i64 = -20000;
+    let j: u8 = 255;
+    let x: f32 = std::f32::INFINITY;
+    let c: char = 'c';
+    let b: bool = true;
+    let u: () = { println!("hello") };
+
+    // let v = (1 as i32) + (2 as i64); // ERROR
+
+    //// Basic I/O
+    println!("{:.4} {} {} {:b} {:?}", std::f64::consts::PI, true, "foo", 7, Some(10));
+    // 3.1416 true foo 111 Some(10)
+
+    let mut s: String = String::new();
+    if let Ok(l) = std::io::stdin().read_line(&mut s) {
+        let i = s[..l-1].parse::<i32>().expect(&format!("Invalid input {}", s));
+        println!("READ INT: {}", i);
+    }
+
+    //// COMPOUND TYPES
+    // Tuples
+    let (v1,v2): (i32,bool) = (77, true);        // Destructuring
+    let tp: (i32,bool) = (77, true);
+    println!("{}", tp.0 as f64);
+
+    // Arrays
+    let a1: [i32;5] = [1, 2, 3, 4, 5]; // Type include size
+    //a1[500]; // compile-time error
+    let last = a1[a1.len()-1];
+    let aslice: &[i32] = &a1[1..];
+    let arr = [1,2,3];
+
+    // Vectors
+    let mut v1: Vec<i32> = Vec::new();
+    v1.push(10);
+    let v2 = vec![1.0, 2.0, 3.0];
+    println!("{:?} {:?}", v1, v2);
+
+    // String
+    let s0: &'static str = "foo";
+    let s1: String = "foo".to_string();
+    let s2 = String::from("bar");
+    let s3: &str = &s2[..s2.len()-1];
+    println!("{} {} {} {}", s0, s1, s2, s3);
+
+    // Box
+    let v: (i32,&str) = (12, "eggs");
+    let b = Box::new(v); // allocate the tuple on the heap
+    println!("{}", b.1);
+
     //// Enums and Structs
+    struct S { x: f32, y: f32 }   // Named-field struct
+    struct T(i32,char);           // Tuple-like struct
+    struct U {}                  // Unit-like struct
+    enum E { A, B(u32) }         // Enum (sum type)
+
+    let s1 = S { x: 1.2, y: 5. };
+    let t1 = T(77,'a');
+    let u: U = U{};
+    let e = E::B(5) + E::B(2).inc();
+
+    use E::B;
+
+    impl E {
+        fn inc(&self) -> Self { match self { B(i) => B(i+1), _ => E::A }  }
+    }
+
+    impl Add for E {
+        type Output = E;
+
+        fn add(self, rhs: E) -> Self::Output {
+            match (self,rhs) { (B(i),B(j)) => B(i+j), _ => E::A }
+        }
+    }
+
+    println!("E::B => {}", match e.inc() { B(i) => i, _ => 0 });
+
+    let r: Result<i32,&str> = Ok(10);
+
 
     #[cfg(debug)] enum MyOption<T> { // Defined in Rust stdlib
         None, Some(T)
@@ -41,6 +120,18 @@ fn main() {
     let t1 = Tp(77,'a');
 
     println!("Named-field struct val: {:?}\nTuple-like struct val: {:?}", z.re, t1.0);
+
+    //// On errors
+
+    type RI = Result<i32,String>;
+    fn ferr(r1: RI, r2: RI) -> RI { return Ok(r1?+r2?); }
+    let ri: RI = ferr(Ok(60),Ok(30));
+    println!("RI: {:?}", ri.unwrap());
+    // let v: Option<i32> = ri.ok(); // ERROR: value used here after move
+
+    println!("Panic recovery: {:?}", std::panic::catch_unwind(|| {
+        let y = 0; let x = 1 / y; x
+    }).ok());
 
     //// Lambdas and closures
 
@@ -166,6 +257,39 @@ fn main() {
     let mut v1 = Vec::new(); let v2 = vec![0.0, 1.0, 0.0, -1.0];
     extend(&mut v1, &v2);
     //extend(&mut v1, &v1); // ERR: can't borrow v1 as immutable cause is also borrowed as mutable
+
+    //// Operator overloading
+
+    use std::ops::*; // imports Add and AddAsign
+    #[derive(Clone,Copy,Debug)] struct Complex<T> { re: T, im: T }
+//    impl<T> Add for Complex<T> where T: Add<Output=T> {
+//        type Output = Self;
+//        fn add(self, rhs: Self) -> Self { Complex{ re:self.re+rhs.re, im:self.im+rhs.im }}
+//    } // notice that operands are taken by value
+
+    // ERROR: impl doesn't use types inside crate
+//    impl Add<i64> for i32 {
+//        type Output = i64;
+//
+//        fn add(self, rhs: i64) -> Self::Output {
+//            self as i32 + rhs
+//        }
+//    }
+
+    // We may loose constraints to allow diff types for + and diff result type
+    impl<L, R, O> Add<Complex<R>> for Complex<L> where L: Add<R, Output=O> {
+        type Output = Complex<O>;
+        fn add(self, rhs: Complex<R>) -> Self::Output { Complex { re: self.re+rhs.re , im: self.im+rhs.im }}
+    } // However, may not be much more useful that the simpler generic def
+
+    impl<T> AddAssign for Complex<T> where T: AddAssign<T> {
+        fn add_assign(&mut self, rhs: Complex<T>) { self.re+=rhs.re; self.im+=rhs.im; }
+    } // for c1 += c2
+
+    let c1 = Complex::<i64> { re: 10, im: 20 };
+    let c2 = Complex::<i32> { re: 10, im: 20 };
+    let c3: Complex<i64> = c1 + c1;
+    println!("Complex: {:?}", c3);
 
     //// More
 

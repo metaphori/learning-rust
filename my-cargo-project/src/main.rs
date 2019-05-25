@@ -1,6 +1,8 @@
 // extern crate my_cargo_project;
 use my_cargo_project::my_mod;
 use another_cargo_project::my_mod1::a;
+use std::path::PathBuf;
+use std::fs::File;
 
 static mut STASH: &i32 = &0; // statics must be initialised
 
@@ -33,7 +35,11 @@ fn main() {
 
     operator_overloading();
 
+    on_traits();
+
     more_stuff();
+
+    concurrency_ex();
 }
 
 fn lambdas_and_closures() {
@@ -328,6 +334,61 @@ fn more_stuff(){
     let fdrop1 = || drop(my_str);
     // let fdrop2 = || drop(my_str); // ERROR: var `my_str` moved due to use in closure
     fdrop1(); // ok
+}
+
+fn on_traits(){
+    trait SS1 { fn newss() -> Self; }
+    trait SS2 { fn newss() -> Self where Self: Sized; }
+
+    impl SS1 for String {  fn newss() -> String { return "xxx".to_string();  }  }
+    impl SS2 for String {  fn newss() -> String { return "xxx".to_string();  }  }
+
+    // let ss1: &SS1 = &"ciao".to_string(); // the trait `on_traits::SS1` cannot be made into an object
+    let ss2: &SS2 = &"ciao".to_string(); // OK
+}
+
+fn concurrency_ex(){
+    use std::thread::spawn; use std::sync::mpsc; // multiple producers, single consumer
+    use std::io::Write;
+
+    pub trait OffThreadExt: Iterator { fn off_thread(self) -> mpsc::IntoIter<Self::Item>; }
+
+    impl<T> OffThreadExt for T where T: Iterator+Send+'static, T::Item: Send+'static {
+        fn off_thread(self) -> mpsc::IntoIter<Self::Item> {
+            let (snd,recvr) = mpsc::sync_channel(1024); // to transfer items from worker thread
+            spawn(move || { // Move this iterator to a new worker thread and run it there
+                for item in self {
+                    let sent = snd.send(item);
+                    if sent.is_err() { println!("ERROR {:?}", sent.err().unwrap()); break; } }
+            });
+            recvr.into_iter() // return an iterator that pulls vals from the channel
+        } }
+
+    fn read_whole_file(p: PathBuf) -> String {
+        use std::io::Read;
+        let mut f = File::open(p);
+        let mut txt = String::new();
+        f.unwrap().read_to_string(&mut txt);
+        println!("Current thread: {:?}", std::thread::current().id());
+        println!("Read str of len {} that starts with '{}'", txt.len(), unsafe{txt.slice_unchecked(0,100)}); std::io::stdout().flush();
+        return txt;
+    }
+
+    fn process_str(s: String) -> String {
+        println!("Current thread: {:?}", std::thread::current().id());
+        println!("Uppercasing str of len {}", s.len()); std::io::stdout().flush();
+        return s.to_uppercase();
+    }
+
+    let docs: Vec<PathBuf> = vec![PathBuf::from("./src/main.rs"), PathBuf::from("./src/lib.rs")];
+    docs.into_iter()
+        .map(read_whole_file)
+        .off_thread()                 // spawn a thread for the above work
+        .map(process_str)
+        .off_thread()                 // spawn another thread for stage 2
+        .all(|f| !f.is_empty());
+
+    std::io::stdin().read_line(&mut "".to_string());
 }
 
 #[test]

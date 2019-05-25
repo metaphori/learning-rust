@@ -7,55 +7,62 @@ static mut STASH: &i32 = &0; // statics must be initialised
 fn main() {
     println!("Hello, world! {} {}", my_mod::f(), a());
 
-    //// Immutable and mutable variables
+    mutable_and_immutable_variables();
 
-    let (v1,v2) = (7.8, true); // IMMUTABILITY by default; also note INFERENCE
-    let v1 = v1+1.; // Shadowing
-    // v1 = v1 +1; // Error
+    scalar_types();
 
-    let v: Vec<i32> = Vec::new();
-    println!("{}", v.len());
-    // v.push(1); // Error: cannot borrow as mutable
+    basic_input_output();
 
-    let mut v: Vec<i32> = Vec::new();
-    v.push(1); // Ok
-    println!("{}", v.len());
+    compound_types();
 
-    // let i: i32 = {  10; }; // ERROR: expected i32, found ()
-    let i: i32 = { fn f(){}; 20; ; 10 }; // OK (local fun; 20 is dropped; empty statement; return 10)
+    user_defined_data_types();
 
-    //// Scalar types
-    let i: i64 = -20000;
-    let j: u8 = 255;
-    let x: f32 = std::f32::INFINITY;
-    let c: char = 'c';
-    let b: bool = true;
-    let u: () = { println!("hello") };
+    on_errors();
 
-    // let v = (1 as i32) + (2 as i64); // ERROR
+    lambdas_and_closures();
 
-    //// Basic I/O
-    println!("{:.4} {} {} {:b} {:?}", std::f64::consts::PI, true, "foo", 7, Some(10));
-    // 3.1416 true foo 111 Some(10)
+    arrays_vectors_and_slices();
 
-    let mut s: String = String::new();
-    if let Ok(l) = std::io::stdin().read_line(&mut s) {
-        let i = s[..l-1].parse::<i32>().expect(&format!("Invalid input {}", s));
-        println!("READ INT: {}", i);
-    }
+    on_ownership_and_move();
 
-    //// COMPOUND TYPES
+    on_copy();
+
+    on_lifetimes();
+
+    sharing_vs_mutation();
+
+    operator_overloading();
+
+    more_stuff();
+}
+
+fn lambdas_and_closures() {
+    let mut z = 0;
+    let f2: fn(i32, i32) -> i32 = |x, y| { x + y };
+    let f3 = |x: i32, y: i32| { x + y };
+// partial typing
+    let f: &Fn(i32, i32) -> i32 = &|x, y| { z + x + y };
+    println!("Closure call: {} {}", f(10, 10), z);
+    let mut z = 0;
+    let mut f = |x, y| {
+        z = z + 1;
+        x + y
+    };
+    println!("Mutable closure call: {} {}", f(10, 20), z);
+}
+
+fn compound_types() {
     // Tuples
-    let (v1,v2): (i32,bool) = (77, true);        // Destructuring
-    let tp: (i32,bool) = (77, true);
+    let (v1, v2): (i32, bool) = (77, true); // Destructuring
+    let tp: (i32, bool) = (77, true);
     println!("{}", tp.0 as f64);
 
     // Arrays
-    let a1: [i32;5] = [1, 2, 3, 4, 5]; // Type include size
-    //a1[500]; // compile-time error
-    let last = a1[a1.len()-1];
+    let a1: [i32; 5] = [1, 2, 3, 4, 5];  // Type include size
+    // a1[500]; // compile-time error
+    let last = a1[a1.len() - 1];
     let aslice: &[i32] = &a1[1..];
-    let arr = [1,2,3];
+    let arr = [1, 2, 3];
 
     // Vectors
     let mut v1: Vec<i32> = Vec::new();
@@ -67,15 +74,54 @@ fn main() {
     let s0: &'static str = "foo";
     let s1: String = "foo".to_string();
     let s2 = String::from("bar");
-    let s3: &str = &s2[..s2.len()-1];
+    let s3: &str = &s2[..s2.len() - 1];
     println!("{} {} {} {}", s0, s1, s2, s3);
 
     // Box
-    let v: (i32,&str) = (12, "eggs");
+    let v: (i32, &str) = (12, "eggs");
     let b = Box::new(v); // allocate the tuple on the heap
     println!("{}", b.1);
+}
 
-    //// Enums and Structs
+fn basic_input_output() {
+    println!("{:.4} {} {} {:b} {:?}", std::f64::consts::PI, true, "foo", 7, Some(10));  // 3.1416 true foo 111 Some(10)
+    let mut s: String = String::new();
+    if let Ok(l) = std::io::stdin().read_line(&mut s) {
+        let i = s[..l - 1].parse::<i32>().expect(&format!("Invalid input {}", s));
+        println!("READ INT: {}", i);
+    }
+}
+
+fn scalar_types() {
+    let i: i64 = -20000;
+    let j: u8 = 255;
+    let x: f32 = std::f32::INFINITY;
+    let c: char = 'c';
+    let b: bool = true;
+    let u: () = { println!("hello") };
+// let v = (1 as i32) + (2 as i64); // ERROR
+}
+
+fn mutable_and_immutable_variables() {
+    let (v1, v2) = (7.8, true); // IMMUTABILITY by default; also note INFERENCE
+    let v1 = v1 + 1.; // Shadowing
+    // v1 = v1 +1; // Error
+    let v: Vec<i32> = Vec::new();
+    println!("{}", v.len());
+    // v.push(1); // Error: cannot borrow as mutable
+    let mut v: Vec<i32> = Vec::new();
+    v.push(1); // Ok
+    println!("{}", v.len());
+    // let i: i32 = {  10; }; // ERROR: expected i32, found ()
+    let i: i32 = {
+        fn f() {};
+        20;
+        ;
+        10
+    };  // OK (local fun; 20 is dropped; empty statement; return 10)
+}
+
+fn user_defined_data_types(){
     struct S { x: f32, y: f32 }   // Named-field struct
     struct T(i32,char);           // Tuple-like struct
     struct U {}                  // Unit-like struct
@@ -92,7 +138,7 @@ fn main() {
         fn inc(&self) -> Self { match self { B(i) => B(i+1), _ => E::A }  }
     }
 
-    impl Add for E {
+    impl std::ops::Add for E {
         type Output = E;
 
         fn add(self, rhs: E) -> Self::Output {
@@ -102,17 +148,15 @@ fn main() {
 
     println!("E::B => {}", match e.inc() { B(i) => i, _ => 0 });
 
-    let r: Result<i32,&str> = Ok(10);
-
 
     #[cfg(debug)] enum MyOption<T> { // Defined in Rust stdlib
-        None, Some(T)
+    None, Some(T)
     };
     let o1 = Some(10);
     println!("{:?}", o1);
 
     struct MyComplex<T> { // Named-field struct
-        re: T, im: T
+    re: T, im: T
     };
     let mut z = MyComplex::<f64> { re: 8.0, im: 4.0 };
 
@@ -120,9 +164,9 @@ fn main() {
     let t1 = Tp(77,'a');
 
     println!("Named-field struct val: {:?}\nTuple-like struct val: {:?}", z.re, t1.0);
+}
 
-    //// On errors
-
+fn on_errors(){
     type RI = Result<i32,String>;
     fn ferr(r1: RI, r2: RI) -> RI { return Ok(r1?+r2?); }
     let ri: RI = ferr(Ok(60),Ok(30));
@@ -133,20 +177,16 @@ fn main() {
         let y = 0; let x = 1 / y; x
     }).ok());
 
-    //// Lambdas and closures
+    fn rf(i: i32) -> Result<i32,String> { if i>=0 { Ok(i) } else { Err(String::from("err")) } }
+    let mut wres = rf(33);
+    let isOk: bool = wres.is_ok();
+    let ok1: Option<&i32> = wres.as_ref().ok(); // borrow of 'wres' occurs here
+    //let ok: Option<i32> = wres.ok(); // ERROR: cannot move out of 'wres' because it is borrowed
+    let ok1 = wres.unwrap_or(88);
+    println!("{:?}", ok1);
+}
 
-    let mut z = 0;
-    let f2: fn(i32,i32)->i32 = |x,y| { x+y };
-    let f3 = |x:i32,y:i32| {x+y}; // partial typing
-    let f: &Fn(i32,i32)->i32 = &|x,y| { z+x+y };
-    println!("Closure call: {} {}", f(10,10), z);
-
-    let mut z = 0;
-    let mut f = |x,y| { z=z+1; x+y };
-    println!("Mutable closure call: {} {}", f(10,20), z);
-
-    //// Arrays, vectors, slices
-
+fn arrays_vectors_and_slices(){
     let a: [f64; 4] =     [0.0, 0.707, 1.0, 0.707];
     let v: Vec<f64> = vec![0.0, 0.707, 1.0, 0.707];
 
@@ -156,19 +196,9 @@ fn main() {
 
     fn print(s: &[f64]){ for e in s { print!("{}; ",e) } println!(""); }
     print(sv); print(sv2);
+}
 
-    //// Error handling: results
-
-    fn rf(i: i32) -> Result<i32,String> { if i>=0 { Ok(i) } else { Err(String::from("err")) } }
-    let mut wres = rf(33);
-    let isOk: bool = wres.is_ok();
-    let ok1: Option<&i32> = wres.as_ref().ok(); // borrow of 'wres' occurs here
-    //let ok: Option<i32> = wres.ok(); // ERROR: cannot move out of 'wres' because it is borrowed
-    let ok1 = wres.unwrap_or(88);
-    println!("{:?}", ok1);
-
-    //// Ownership, moves
-
+fn on_ownership_and_move(){
     fn vgen() -> Vec<i32> {
         let v = vec![1,2,3];
         return v; // ownership moved from local var 'v' to the caller
@@ -185,9 +215,9 @@ fn main() {
         s.push('!');
     }
     // println!("{:?}",v); // ERROR: value 'v' used after move
+}
 
-    //// Copy
-
+fn on_copy(){
     let mut a = 0;
     {
         let b = 7;
@@ -213,9 +243,9 @@ fn main() {
 
     let mut s2 = give_s(); // give_s() moves its return value to s2
     s2 = chg_s(s2); // takes ownership and returns it
+}
 
-    //// Lifetime
-
+fn on_lifetimes(){
     // fn f(p: &i32) { // Actually a shortcut for:  fn f<'a>(p: &'a i32)
     //    unsafe { STASH = p; } // COMPILE-TIME ERROR: lifetime `'static` required
     // }
@@ -250,16 +280,17 @@ fn main() {
     } // ERROR: (with S1) y does not live long enough
     println!("{:?}", r);
 
-    //// Sharing vs. mutation
+}
 
+fn sharing_vs_mutation(){
     fn extend(v: &mut Vec<f64>, s: &[f64]) { for e in s { v.push(*e); } }
 
     let mut v1 = Vec::new(); let v2 = vec![0.0, 1.0, 0.0, -1.0];
     extend(&mut v1, &v2);
     //extend(&mut v1, &v1); // ERR: can't borrow v1 as immutable cause is also borrowed as mutable
+}
 
-    //// Operator overloading
-
+fn operator_overloading(){
     use std::ops::*; // imports Add and AddAsign
     #[derive(Clone,Copy,Debug)] struct Complex<T> { re: T, im: T }
 //    impl<T> Add for Complex<T> where T: Add<Output=T> {
@@ -290,9 +321,9 @@ fn main() {
     let c2 = Complex::<i32> { re: 10, im: 20 };
     let c3: Complex<i64> = c1 + c1;
     println!("Complex: {:?}", c3);
+}
 
-    //// More
-
+fn more_stuff(){
     let my_str = "hello".to_string();
     let fdrop1 = || drop(my_str);
     // let fdrop2 = || drop(my_str); // ERROR: var `my_str` moved due to use in closure

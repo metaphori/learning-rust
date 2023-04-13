@@ -1,5 +1,10 @@
 # Notes
 
+- This repo is a **Rust project**
+- It contains two **(Cargo) packages**: 
+    1. `my-cargo-project`: which contains one binary crate `main.rs` and one library crate `lib.rs`
+    2. `another-cargo-project`
+
 ## A Cargo project
 
 - `cargo new --bin my-cargo-project`

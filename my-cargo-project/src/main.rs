@@ -179,9 +179,11 @@ fn on_errors(){
     println!("RI: {:?}", ri.unwrap());
     // let v: Option<i32> = ri.ok(); // ERROR: value used here after move
 
+    /*
     println!("Panic recovery: {:?}", std::panic::catch_unwind(|| {
         let y = 0; let x = 1 / y; x
     }).ok());
+    */
 
     fn rf(i: i32) -> Result<i32,String> { if i>=0 { Ok(i) } else { Err(String::from("err")) } }
     let mut wres = rf(33);

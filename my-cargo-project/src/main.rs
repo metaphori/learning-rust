@@ -46,7 +46,7 @@ fn lambdas_and_closures() {
     let mut z = 0;
     let f2: fn(i32, i32) -> i32 = |x, y| { x + y };
     let f3 = |x: i32, y: i32| { x + y };
-// partial typing
+    // partial typing
     let f: &Fn(i32, i32) -> i32 = &|x, y| { z + x + y };
     println!("Closure call: {} {}", f(10, 10), z);
     let mut z = 0;
@@ -105,7 +105,7 @@ fn scalar_types() {
     let c: char = 'c';
     let b: bool = true;
     let u: () = { println!("hello") };
-// let v = (1 as i32) + (2 as i64); // ERROR
+    // let v = (1 as i32) + (2 as i64); // ERROR
 }
 
 fn mutable_and_immutable_variables() {
@@ -119,7 +119,7 @@ fn mutable_and_immutable_variables() {
     v.push(1); // Ok
     println!("{}", v.len());
     // let i: i32 = {  10; }; // ERROR: expected i32, found ()
-    let i: i32 = {
+    let i: i32 = { // blocks as expressions
         fn f() {};
         20;
         ;

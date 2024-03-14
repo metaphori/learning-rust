@@ -1,0 +1,6 @@
+[package]
+name = "exp-02-misc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

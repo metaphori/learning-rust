@@ -38,6 +38,25 @@ fn returning_an_impl_trait_wrapped_inside_result_alternative() -> io::Result<Box
     Ok(Box::new(f))
 }
 
+
+fn f(x: String) -> String { x + "!" }
+fn g(x: &str) -> String { String::from(x) + "!" }
+
+fn ownership_simple() {
+    let x = String::from("foo");
+    f(x); // x is moved into f
+    // println!("{}", x); // cannot borrow value here (after move in previous line)
+    // println!("{}", &x); // same error
+
+    let x = String::from("bar");
+    g(&x); // just borrow 
+    println!("{}", x); // ok   
+
+    let x = String::from("foobar");
+    f(x.clone()); // x is cloned, avoiding move of the original
+    println!("{}", x); // ok    
+}
+
 fn main() {
     // *** IMPL TRAIT *** <https://doc.rust-lang.org/rust-by-example/trait/impl_trait.html> <https://varkor.github.io/blog/2018/07/03/existential-types-in-rust.html
     let result = returning_an_impl_trait_wrapped_inside_result();
@@ -46,4 +65,6 @@ fn main() {
 
     let another = returning_an_impl_trait_wrapped_inside_result_alternative();
     println!("{:?}", another.unwrap().bytes().map(|b| b.unwrap() as char).collect::<String>());
+
+    ownership_simple();
 }
